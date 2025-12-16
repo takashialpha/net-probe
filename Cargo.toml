@@ -1,0 +1,21 @@
+[package]
+name = "net-probe"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata]
+description = "A simple rust network probe"
+authors = ["takashialpha <takashialpha@protonmail.com>"]
+license = "Apache-2.0"
+
+[dependencies]
+
+[profile.release]
+strip = true
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+overflow-checks = false
+incremental = false
