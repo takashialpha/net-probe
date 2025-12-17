@@ -1,10 +1,10 @@
 [package]
-name = "net-probe"
+name = "app-base"
 version = "0.1.0"
 edition = "2024"
 
 [package.metadata]
-description = "A simple net probe made in rust"
+description = "A simple base for rust apps"
 authors = ["takashialpha <takashialpha@protonmail.com>"]
 license = "Apache-2.0"
 
