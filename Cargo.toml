@@ -2,9 +2,7 @@
 name = "app-base"
 version = "0.1.0"
 edition = "2024"
-
-[package.metadata]
-description = "A simple base for rust apps"
+description = "A minimal, reusable base for Rust applications"
 authors = ["takashialpha <takashialpha@protonmail.com>"]
 license = "Apache-2.0"
 
@@ -13,6 +11,9 @@ clap = { version = "4.5.53", features = ["derive"] }
 dirs = "6.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "0.9.8"
+
+[lib]
+path = "src/lib.rs"
 
 [profile.release]
 strip = true

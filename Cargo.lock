@@ -53,6 +53,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "app-base"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "dirs",
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -190,16 +200,6 @@ checksum = "df15f6eac291ed1cf25865b1ee60399f57e7c227e7f51bdbd4c5270396a9ed50"
 dependencies = [
  "bitflags",
  "libc",
-]
-
-[[package]]
-name = "net-probe"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dirs",
- "serde",
- "toml",
 ]
 
 [[package]]
