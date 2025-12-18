@@ -1,4 +1,5 @@
 use std::fmt;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -25,19 +26,39 @@ impl From<ConfigError> for AppError {
 
 #[derive(Debug)]
 pub enum ConfigError {
-    ConfigDirNotFound,
     Io(std::io::Error),
-    Parse(toml::de::Error),
     Serialize(toml::ser::Error),
+    ConfigDirNotFound,
+
+    InvalidToml {
+        path: PathBuf,
+        source: toml::de::Error,
+    },
 }
 
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConfigError::ConfigDirNotFound => write!(f, "configuration directory not found"),
-            ConfigError::Io(e) => write!(f, "I/O error: {}", e),
-            ConfigError::Parse(e) => write!(f, "TOML parse error: {}", e),
-            ConfigError::Serialize(e) => write!(f, "TOML serialize error: {}", e),
+            ConfigError::Io(err) => {
+                write!(f, "filesystem error: {}", err)
+            }
+
+            ConfigError::Serialize(err) => {
+                write!(f, "failed to serialize default config: {}", err)
+            }
+
+            ConfigError::ConfigDirNotFound => {
+                write!(f, "unable to determine configuration directory")
+            }
+
+            ConfigError::InvalidToml { path, source } => {
+                write!(
+                    f,
+                    "invalid TOML in config file {}\n{}",
+                    path.display(),
+                    source
+                )
+            }
         }
     }
 }

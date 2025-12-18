@@ -4,17 +4,19 @@ use std::path::PathBuf;
 
 use crate::error::ConfigError;
 
+const CONFIG_FILE: &str = "config.toml";
+
 #[derive(Debug, Clone)]
 pub struct TomlOptions {
     pub app_name: String,
-    pub file_name: String,
+    pub config_dir: Option<PathBuf>,
 }
 
 impl Default for TomlOptions {
     fn default() -> Self {
         Self {
             app_name: "app".into(),
-            file_name: "config.toml".into(),
+            config_dir: None,
         }
     }
 }
@@ -32,13 +34,24 @@ where
         create_default(&path, &T::default())?;
     }
 
-    let contents = std::fs::read_to_string(&path).map_err(ConfigError::Io)?;
-    toml::from_str(&contents).map_err(ConfigError::Parse)
+    let contents = fs::read_to_string(&path).map_err(ConfigError::Io)?;
+
+    match toml::from_str(&contents) {
+        Ok(cfg) => Ok(cfg),
+        Err(err) => Err(ConfigError::InvalidToml { path, source: err }),
+    }
 }
 
 fn default_path(opts: &TomlOptions) -> Result<PathBuf, ConfigError> {
-    let base = dirs::config_dir().ok_or(ConfigError::ConfigDirNotFound)?;
-    Ok(base.join(&opts.app_name).join(&opts.file_name))
+    let dir = match &opts.config_dir {
+        Some(dir) => dir.clone(),
+        None => {
+            let base = dirs::config_dir().ok_or(ConfigError::ConfigDirNotFound)?;
+            base.join(&opts.app_name)
+        }
+    };
+
+    Ok(dir.join(CONFIG_FILE))
 }
 
 fn create_default<T: serde::Serialize>(path: &PathBuf, defaults: &T) -> Result<(), ConfigError> {

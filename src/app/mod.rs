@@ -1,6 +1,7 @@
 use crate::cli;
 use crate::config;
 use crate::error::AppError;
+use std::path::PathBuf;
 
 pub mod context {
     use crate::cli::RuntimeArgs;
@@ -23,21 +24,26 @@ pub trait App {
 #[derive(Debug, Clone)]
 pub struct AppConfigLocation {
     pub app_name: String,
-    pub file_name: String,
+    pub config_dir: Option<PathBuf>,
 }
 
 impl AppConfigLocation {
-    pub fn new(app_name: impl Into<String>, file_name: impl Into<String>) -> Self {
+    pub fn new(app_name: impl Into<String>) -> Self {
         Self {
             app_name: app_name.into(),
-            file_name: file_name.into(),
+            config_dir: None,
         }
+    }
+
+    pub fn with_dir(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.config_dir = Some(dir.into());
+        self
     }
 
     pub fn to_toml_options(&self) -> crate::config::TomlOptions {
         crate::config::TomlOptions {
             app_name: self.app_name.clone(),
-            file_name: self.file_name.clone(),
+            config_dir: self.config_dir.clone(),
         }
     }
 }
