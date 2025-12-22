@@ -1,4 +1,4 @@
-use crate::cli;
+use crate::cli::CliArgs;
 use crate::config;
 use crate::error::AppError;
 use std::path::PathBuf;
@@ -78,10 +78,8 @@ fn assert_privilege(required: Privilege) {
     }
 }
 
-pub fn run<A: App>(app: A, cfg: AppConfigLocation) -> Result<(), AppError> {
+pub fn run<A: App>(app: A, cfg: AppConfigLocation, cli_args: CliArgs) -> Result<(), AppError> {
     assert_privilege(A::privilege());
-
-    let cli_args = cli::parse();
 
     let opts = cfg.to_toml_options();
     let config = config::load::<A::Config>(cli_args.init.config, opts)?;

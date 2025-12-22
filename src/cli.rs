@@ -1,20 +1,17 @@
-use clap::Parser;
+use clap::Args;
 use std::path::PathBuf;
 
-#[derive(Debug, Parser)]
+#[derive(Debug)]
 pub struct CliArgs {
-    #[command(flatten)]
     pub init: InitArgs,
-
-    #[command(flatten)]
     pub runtime: RuntimeArgs,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Args)]
 pub struct InitArgs {
     #[arg(short, long)]
     pub config: Option<PathBuf>,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Args, Default)]
 pub struct RuntimeArgs {}
