@@ -1,2 +1,2 @@
 mod toml;
-pub use toml::*;
+pub use toml::{TomlOptions, load};

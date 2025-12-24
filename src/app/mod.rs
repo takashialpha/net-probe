@@ -1,19 +1,48 @@
-use crate::cli::CliArgs;
-use crate::config;
+use crate::cli::RuntimeArgs;
 use crate::error::AppError;
+use crate::signals::SignalHandler;
 use std::path::PathBuf;
 
-pub mod context {
-    use crate::cli::RuntimeArgs;
+#[derive(Debug, Clone)]
+pub struct Context<C> {
+    pub config: C,
+    pub runtime: RuntimeArgs,
+    pub signals: SignalHandler,
+    config_path: Option<PathBuf>,
+    config_opts: crate::config::TomlOptions,
+}
 
-    #[derive(Debug)]
-    pub struct Context<C> {
-        pub config: C,
-        pub runtime: RuntimeArgs,
+impl<C> Context<C> {
+    pub(crate) fn new(
+        config: C,
+        runtime: RuntimeArgs,
+        signals: SignalHandler,
+        config_path: Option<PathBuf>,
+        config_opts: crate::config::TomlOptions,
+    ) -> Self {
+        Self {
+            config,
+            runtime,
+            signals,
+            config_path,
+            config_opts,
+        }
     }
 }
 
-pub use context::Context;
+impl<C> Context<C>
+where
+    C: serde::de::DeserializeOwned + serde::Serialize + Default,
+{
+    pub fn reload_config(&mut self) -> Result<(), AppError> {
+        tracing::debug!(target: "app_base::config", "reloading configuration");
+        let new_config =
+            crate::config::load::<C>(self.config_path.clone(), self.config_opts.clone())?;
+        self.config = new_config;
+        tracing::debug!(target: "app_base::config", "configuration reloaded successfully");
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Privilege {
@@ -56,38 +85,4 @@ impl AppConfigLocation {
             config_dir: self.config_dir.clone(),
         }
     }
-}
-
-fn assert_privilege(required: Privilege) {
-    if required == Privilege::Root {
-        #[cfg(unix)]
-        {
-            if unsafe { libc::geteuid() } != 0 {
-                eprintln!("this application must be run as root");
-                std::process::exit(1);
-            }
-        }
-
-        #[cfg(not(unix))]
-        {
-            eprintln!(
-                "your platform is not supported. if you want to run this program, you must disable assert_privilege, which may break the application."
-            );
-            std::process::exit(1);
-        }
-    }
-}
-
-pub fn run<A: App>(app: A, cfg: AppConfigLocation, cli_args: CliArgs) -> Result<(), AppError> {
-    assert_privilege(A::privilege());
-
-    let opts = cfg.to_toml_options();
-    let config = config::load::<A::Config>(cli_args.init.config, opts)?;
-
-    let ctx = Context {
-        config,
-        runtime: cli_args.runtime,
-    };
-
-    app.run(ctx)
 }

@@ -1,16 +1,16 @@
 use clap::Args;
 use std::path::PathBuf;
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, Clone)]
 pub struct InitArgs {
     #[arg(short, long)]
     pub config: Option<PathBuf>,
 }
 
-#[derive(Debug, Args, Default)]
+#[derive(Debug, Args, Default, Clone)]
 pub struct RuntimeArgs {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CliArgs {
     pub init: InitArgs,
     pub runtime: RuntimeArgs,

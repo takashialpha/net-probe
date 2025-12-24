@@ -1,8 +1,7 @@
+use crate::error::ConfigError;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
-
-use crate::error::ConfigError;
 
 const CONFIG_FILE: &str = "config.toml";
 
@@ -31,14 +30,21 @@ where
     };
 
     if !path.exists() {
+        tracing::debug!(target: "app_base::config", path = ?path, "config file not found, creating default");
         create_default(&path, &T::default())?;
     }
 
+    tracing::debug!(target: "app_base::config", path = ?path, "loading config");
     let contents = fs::read_to_string(&path).map_err(ConfigError::Io)?;
-
     match toml::from_str(&contents) {
-        Ok(cfg) => Ok(cfg),
-        Err(err) => Err(ConfigError::InvalidToml { path, source: err }),
+        Ok(cfg) => {
+            tracing::debug!(target: "app_base::config", path = ?path, "config loaded successfully");
+            Ok(cfg)
+        }
+        Err(err) => {
+            tracing::debug!(target: "app_base::config", path = ?path, error = %err, "invalid toml");
+            Err(ConfigError::InvalidToml { path, source: err })
+        }
     }
 }
 
@@ -47,10 +53,9 @@ fn default_path(opts: &TomlOptions) -> Result<PathBuf, ConfigError> {
         Some(dir) => dir.clone(),
         None => {
             let base = dirs::config_dir().ok_or(ConfigError::ConfigDirNotFound)?;
-            base.join(format!(".{}", &opts.app_name)) // default: hidden
+            base.join(format!(".{}", &opts.app_name))
         }
     };
-
     Ok(dir.join(CONFIG_FILE))
 }
 
@@ -58,9 +63,9 @@ fn create_default<T: serde::Serialize>(path: &PathBuf, defaults: &T) -> Result<(
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(ConfigError::Io)?;
     }
-
     let toml = toml::to_string_pretty(defaults).map_err(ConfigError::Serialize)?;
-
     let mut file = fs::File::create(path).map_err(ConfigError::Io)?;
-    file.write_all(toml.as_bytes()).map_err(ConfigError::Io)
+    file.write_all(toml.as_bytes()).map_err(ConfigError::Io)?;
+    tracing::debug!(target: "app_base::config", path = ?path, "created default config");
+    Ok(())
 }
