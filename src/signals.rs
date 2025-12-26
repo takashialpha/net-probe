@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use tokio::runtime::Handle;
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::Notify;
 
@@ -50,10 +51,12 @@ impl SignalHandler {
 
     pub fn install(self) -> Self {
         let handler = self.clone();
+        let handle = Handle::current();
 
         let shutdown = handler.shutdown.clone();
         let shutdown_flag = handler.shutdown_flag.clone();
-        tokio::spawn(async move {
+
+        handle.spawn(async move {
             let mut sigterm =
                 signal(SignalKind::terminate()).expect("failed to install SIGTERM handler");
             let mut sigint =
@@ -61,12 +64,10 @@ impl SignalHandler {
 
             tokio::select! {
                 _ = sigterm.recv() => {
-                    tracing::debug!(target: "app_base::signals", signal = "SIGTERM", "received shutdown signal");
                     shutdown_flag.store(true, Ordering::Relaxed);
                     shutdown.notify_waiters();
                 }
                 _ = sigint.recv() => {
-                    tracing::debug!(target: "app_base::signals", signal = "SIGINT", "received shutdown signal");
                     shutdown_flag.store(true, Ordering::Relaxed);
                     shutdown.notify_waiters();
                 }
@@ -74,12 +75,11 @@ impl SignalHandler {
         });
 
         let reload = handler.reload.clone();
-        tokio::spawn(async move {
+        handle.spawn(async move {
             let mut sighup =
                 signal(SignalKind::hangup()).expect("failed to install SIGHUP handler");
 
             while sighup.recv().await.is_some() {
-                tracing::debug!(target: "app_base::signals", signal = "SIGHUP", "received reload signal");
                 reload.notify_one();
             }
         });
