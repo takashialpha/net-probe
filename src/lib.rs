@@ -30,7 +30,7 @@ pub fn run<A: App>(app: A, cfg: AppConfigLocation, cli_args: CliArgs) -> Result<
     let opts = cfg.to_toml_options();
     let config = config::load::<A::Config>(cli_args.init.config.clone(), opts.clone())?;
 
-    let signals = SignalHandler::new().install();
+    let signals = SignalHandler::new();
 
     let ctx = Context::new(
         config,
