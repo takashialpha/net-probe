@@ -28,6 +28,10 @@ impl<C> Context<C> {
             config_opts,
         }
     }
+
+    pub fn config_enabled(&self) -> bool {
+        self.config_opts.enabled
+    }
 }
 
 impl<C> Context<C>
@@ -35,6 +39,14 @@ where
     C: serde::de::DeserializeOwned + serde::Serialize + Default,
 {
     pub fn reload_config(&mut self) -> Result<(), AppError> {
+        if !self.config_opts.enabled {
+            tracing::debug!(
+                target: "app_base::config",
+                "config reload requested but config is disabled"
+            );
+            return Ok(());
+        }
+
         tracing::debug!(target: "app_base::config", "reloading configuration");
         let new_config =
             crate::config::load::<C>(self.config_path.clone(), self.config_opts.clone())?;
@@ -57,6 +69,10 @@ pub trait App {
         Privilege::User
     }
 
+    fn config_enabled() -> bool {
+        true
+    }
+
     fn run(&self, ctx: Context<Self::Config>) -> Result<(), AppError>;
 }
 
@@ -64,6 +80,7 @@ pub trait App {
 pub struct AppConfigLocation {
     pub app_name: String,
     pub config_dir: Option<PathBuf>,
+    pub enabled: bool,
 }
 
 impl AppConfigLocation {
@@ -71,7 +88,13 @@ impl AppConfigLocation {
         Self {
             app_name: app_name.into(),
             config_dir: None,
+            enabled: true,
         }
+    }
+
+    pub fn disabled(mut self) -> Self {
+        self.enabled = false;
+        self
     }
 
     pub fn with_dir(mut self, dir: impl Into<PathBuf>) -> Self {
@@ -83,6 +106,7 @@ impl AppConfigLocation {
         crate::config::TomlOptions {
             app_name: self.app_name.clone(),
             config_dir: self.config_dir.clone(),
+            enabled: self.enabled,
         }
     }
 }
