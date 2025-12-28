@@ -29,7 +29,6 @@ pub enum ConfigError {
     Io(std::io::Error),
     Serialize(toml::ser::Error),
     ConfigDirNotFound,
-    ConfigDisabled,
     InvalidToml {
         path: PathBuf,
         source: toml::de::Error,
@@ -49,13 +48,6 @@ impl fmt::Display for ConfigError {
 
             ConfigError::ConfigDirNotFound => {
                 write!(f, "unable to determine configuration directory")
-            }
-
-            ConfigError::ConfigDisabled => {
-                write!(
-                    f,
-                    "config was disabled in the app creation, but the program used it"
-                )
             }
 
             ConfigError::InvalidToml { path, source } => {

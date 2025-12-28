@@ -9,9 +9,6 @@ const CONFIG_FILE: &str = "config.toml";
 pub struct TomlOptions {
     pub app_name: String,
     pub config_dir: Option<PathBuf>,
-    /// Whether config handling is enabled at all.
-    /// If false, loading a missing config is an error and no file is created.
-    pub enabled: bool,
 }
 
 impl Default for TomlOptions {
@@ -19,7 +16,6 @@ impl Default for TomlOptions {
         Self {
             app_name: "rust_unnamed_app".into(),
             config_dir: None,
-            enabled: true,
         }
     }
 }
@@ -28,10 +24,6 @@ pub fn load<T>(cli_path: Option<PathBuf>, opts: TomlOptions) -> Result<T, Config
 where
     T: serde::de::DeserializeOwned + serde::Serialize + Default,
 {
-    if !opts.enabled {
-        return Err(ConfigError::ConfigDisabled);
-    }
-
     let path = cli_path.unwrap_or_else(|| default_path(&opts));
 
     if !path.exists() {

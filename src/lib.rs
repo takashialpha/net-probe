@@ -24,20 +24,26 @@ fn assert_privilege(required: Privilege) {
     }
 }
 
-pub fn run<A: App>(app: A, cfg: AppConfigLocation, cli_args: CliArgs) -> Result<(), AppError> {
+pub fn run<A: App>(app: A, cfg: Option<AppConfigLocation>, args: CliArgs) -> Result<(), AppError> {
     assert_privilege(A::privilege());
 
-    let opts = cfg.to_toml_options();
-    let config = config::load::<A::Config>(cli_args.init.config.clone(), opts.clone())?;
+    let (config, config_opts) = match cfg {
+        Some(cfg) => {
+            let opts = cfg.to_toml_options();
+            let config = config::load::<A::Config>(args.config.clone(), opts.clone())?;
+            (config, Some(opts))
+        }
+        None => (A::Config::default(), None),
+    };
 
     let signals = SignalHandler::new();
 
     let ctx = Context::new(
         config,
-        cli_args.runtime,
+        args.clone(),
         signals,
-        cli_args.init.config,
-        opts,
+        args.config.clone(),
+        config_opts,
     );
 
     tracing::debug!(target: "app_base", "starting application");
