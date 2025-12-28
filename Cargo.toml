@@ -1,5 +1,5 @@
 [package]
-name = "app-base"
+name = "app_base"
 version = "0.1.0"
 edition = "2024"
 description = "A minimal, reusable base for Rust applications"
