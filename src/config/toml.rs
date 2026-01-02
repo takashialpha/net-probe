@@ -1,4 +1,4 @@
-use crate::error::ConfigError;
+use crate::config::ConfigError;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};

@@ -6,16 +6,11 @@ compile_error!(
 );
 
 pub mod app;
-pub mod cli;
 pub mod config;
-pub mod error;
 pub mod signals;
 
-pub use app::{App, AppConfigLocation, Context, Privilege};
-pub use error::{AppError, ConfigError};
+pub use app::{App, AppConfigLocation, ConfigPath, Context, Privilege, error::AppError};
 pub use signals::{Signal, SignalHandler};
-
-use cli::CliArgs;
 
 fn assert_privilege(required: Privilege) {
     if required == Privilege::Root && unsafe { libc::geteuid() } != 0 {
@@ -24,13 +19,15 @@ fn assert_privilege(required: Privilege) {
     }
 }
 
-pub fn run<A: App>(app: A, cfg: Option<AppConfigLocation>, args: CliArgs) -> Result<(), AppError> {
+pub fn run<A: App>(app: A, cfg: Option<AppConfigLocation>, args: A::Cli) -> Result<(), AppError> {
     assert_privilege(A::privilege());
+
+    let config_path = args.config_path();
 
     let (config, config_opts) = match cfg {
         Some(cfg) => {
             let opts = cfg.to_toml_options();
-            let config = config::load::<A::Config>(args.config.clone(), opts.clone())?;
+            let config = config::load::<A::Config>(config_path.clone(), opts.clone())?;
             (config, Some(opts))
         }
         None => (A::Config::default(), None),
@@ -38,13 +35,7 @@ pub fn run<A: App>(app: A, cfg: Option<AppConfigLocation>, args: CliArgs) -> Res
 
     let signals = SignalHandler::new();
 
-    let ctx = Context::new(
-        config,
-        args.clone(),
-        signals,
-        args.config.clone(),
-        config_opts,
-    );
+    let ctx = Context::new(config, args, signals, config_path, config_opts);
 
     tracing::debug!(target: "app_base", "starting application");
     app.run(ctx)

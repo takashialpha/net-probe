@@ -30,10 +30,10 @@ impl SignalHandler {
         }
     }
 
-    /// Install signal listeners.
+    /// install signal listeners.
     /// # Panics
-    /// Panics if called outside a Tokio runtime.
-    /// Panics if called more than once.
+    /// panics if called outside a tokio runtime.
+    /// panics if called more than once.
     pub fn install(&self) {
         self.installed
             .set(())

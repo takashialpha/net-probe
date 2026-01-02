@@ -1,21 +1,22 @@
-use crate::cli::CliArgs;
-use crate::error::AppError;
+pub mod error;
+
 use crate::signals::SignalHandler;
+use error::AppError;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
-pub struct Context<C> {
+pub struct Context<C, A> {
     pub config: C,
-    pub args: CliArgs,
+    pub args: A,
     pub signals: SignalHandler,
     config_path: Option<PathBuf>,
     config_opts: Option<crate::config::TomlOptions>,
 }
 
-impl<C> Context<C> {
+impl<C, A> Context<C, A> {
     pub(crate) fn new(
         config: C,
-        args: CliArgs,
+        args: A,
         signals: SignalHandler,
         config_path: Option<PathBuf>,
         config_opts: Option<crate::config::TomlOptions>,
@@ -30,7 +31,7 @@ impl<C> Context<C> {
     }
 }
 
-impl<C> Context<C>
+impl<C, A> Context<C, A>
 where
     C: serde::de::DeserializeOwned + serde::Serialize + Default,
 {
@@ -63,14 +64,19 @@ pub enum Privilege {
     Root,
 }
 
+pub trait ConfigPath {
+    fn config_path(&self) -> Option<PathBuf>;
+}
+
 pub trait App {
     type Config: serde::de::DeserializeOwned + serde::Serialize + Default;
+    type Cli: ConfigPath + Clone;
 
     fn privilege() -> Privilege {
         Privilege::User
     }
 
-    fn run(&self, ctx: Context<Self::Config>) -> Result<(), AppError>;
+    fn run(&self, ctx: Context<Self::Config, Self::Cli>) -> Result<(), AppError>;
 }
 
 #[derive(Debug, Clone)]
