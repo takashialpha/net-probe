@@ -1,5 +1,9 @@
-mod error;
-mod toml;
+pub mod error;
+pub mod loader;
+pub mod path;
+pub mod toml;
+pub mod writer;
 
 pub use error::ConfigError;
-pub use toml::{TomlOptions, load};
+pub use loader::load;
+pub use toml::TomlOptions;
