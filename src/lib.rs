@@ -11,6 +11,7 @@ pub mod signals;
 
 pub use app::{App, AppConfigLocation, ConfigPath, Context, Privilege, error::AppError};
 pub use signals::{Signal, SignalHandler};
+use std::sync::Arc;
 
 fn assert_privilege(required: Privilege) {
     if required == Privilege::Root && unsafe { libc::geteuid() } != 0 {
@@ -33,7 +34,7 @@ pub fn run<A: App>(app: A, cfg: Option<AppConfigLocation>, args: A::Cli) -> Resu
         None => (A::Config::default(), None),
     };
 
-    let signals = SignalHandler::new();
+    let signals = Arc::new(SignalHandler::new());
 
     let ctx = Context::new(config, args, signals, config_path, config_opts);
 
